@@ -18,11 +18,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
 
     let mut k = 26 ;
-    let mut modulo = 83u16;
-    let final_state:Vec<u16> = vec![1];
-    let string_size = [2,1];//args[1].parse::<u8>().expect("Not a valid u8");;
+    let mut modulo =  139u16;
+    let final_state:Vec<u16> = vec![2];
+    let string_size = [1];//args[1].parse::<u8>().expect("Not a valid u8");;
     //let string_number = args[2].parse::<usize>().expect("Not a valid usize");
-    let mut coef: Vec<u16> = vec![41, 62, 26, 21, 20, 55, 6, 22, 70, 27, 30, 78, 40, 81, 49, 64, 21, 27, 60, 51, 69, 38, 66, 72, 41, 36, 48, 49, 21, 31, 77, 62, 51, 79, 74, 42, 48, 44, 47, 70, 34, 38, 54, 78, 82, 63, 78, 35, 82, 47, 51, 1, 69, 42, 33, 25, 18, 3, 68, 78, 72, 59, 25, 8, 65, 12, 53, 35, 13, 7, 39, 14, 24, 63, 41, 70, 48, 28];
+    let mut coef: Vec<u16> = vec![113, 15, 49, 21, 137, 50, 132, 129, 47, 46, 45, 136, 57, 11, 74, 48, 8, 34, 126, 128, 4, 59, 124, 47, 79, 73, 4, 133, 68, 27, 67, 135, 33, 87, 112, 95, 116, 72, 56, 3, 46, 103, 117, 17, 73, 117, 136, 62, 82, 13, 121, 25, 109, 104, 75, 46, 43, 131, 106, 45, 39, 12, 71, 120, 41, 51, 135, 91, 101, 27, 29, 61, 129, 114, 51, 26, 67, 24];
     let encoding: Vec<u8> = (b'a'..=b'z').collect();
     let dir_path = "/home/henry/fhe-worker";
     let mut idx_start_str = 0;
@@ -195,6 +195,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Elapsed time: {:?}", elapsed);
         }
 
+
+
         let total_elapsed: Duration = elapsed_times.iter().sum();
         let average_elapsed = total_elapsed / (measurements as u32);
 
@@ -210,17 +212,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("sanitization...");
 
-        let measurements = 1;
+        let measurements = 3;
         let mut elapsed_times: Vec<Duration> = Vec::new();
 
         let mut sanitized_v = vec![];
+        for enc_x in &enc_string_arr_ascii[idx_str] {
+            sanitized_v.push(&matching_res * enc_x);
+        }
 
 
         for _ in 0..measurements {
 
             let start = Instant::now();
             for enc_x in &enc_string_arr_ascii[idx_str] {
-                sanitized_v.push(&matching_res * enc_x);
+                &matching_res * enc_x;
             }
 
             let elapsed = start.elapsed();
