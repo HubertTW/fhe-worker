@@ -1,5 +1,5 @@
 use bincode;
-use std::fs;
+use std::{fs, thread};
 use std::env;
 use std::fs::File;
 use glob::glob;
@@ -18,11 +18,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
 
     let mut k = 26 ;
-    let mut modulo =  139u16;
+    let mut modulo =  179u16;
     let final_state:Vec<u16> = vec![2];
-    let string_size = [1];//args[1].parse::<u8>().expect("Not a valid u8");;
+    let mut string_size = vec![];
+    string_size.push(args[1].parse::<u8>().expect("Not a valid u8"));//args[1].parse::<u8>().expect("Not a valid u8");;
     //let string_number = args[2].parse::<usize>().expect("Not a valid usize");
-    let mut coef: Vec<u16> = vec![113, 15, 49, 21, 137, 50, 132, 129, 47, 46, 45, 136, 57, 11, 74, 48, 8, 34, 126, 128, 4, 59, 124, 47, 79, 73, 4, 133, 68, 27, 67, 135, 33, 87, 112, 95, 116, 72, 56, 3, 46, 103, 117, 17, 73, 117, 136, 62, 82, 13, 121, 25, 109, 104, 75, 46, 43, 131, 106, 45, 39, 12, 71, 120, 41, 51, 135, 91, 101, 27, 29, 61, 129, 114, 51, 26, 67, 24];
+    let mut coef: Vec<u16> = vec![124, 156, 173, 85, 170, 113, 31, 86, 62, 111, 4, 176, 40, 116, 2, 144, 168, 145, 120, 71, 6, 63, 43, 94, 104, 149, 11, 94, 107, 95, 90, 115, 133, 60, 45, 18, 51, 39, 132, 14, 166, 17, 141, 37, 111, 66, 121, 134, 11, 164, 142, 61, 144, 159, 146, 8, 27, 2, 158, 65, 40, 59, 55, 114, 97, 74, 176, 14, 96, 157, 129, 12, 66, 132, 123, 154, 0, 96, 144, 139, 113, 20, 166, 140, 31, 78, 48, 92, 88, 63, 105, 145, 175, 161, 164, 29, 77, 142, 135, 169, 22, 111, 150, 80, 118, 72, 49, 33, 158, 134, 3, 105, 141, 8, 101, 6, 154, 126, 32, 92, 25, 17, 45, 109, 9, 162, 15, 140, 66, 118, 18, 152, 72, 87, 126, 156, 22, 99, 109, 86, 21, 162, 47, 112, 15, 38, 85, 130, 173, 129, 8, 171, 22, 130, 114, 3];
     let encoding: Vec<u8> = (b'a'..=b'z').collect();
     let dir_path = "/home/henry/fhe-worker";
     let mut idx_start_str = 0;
@@ -33,7 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     rayon::broadcast(|_| set_server_key(sk.clone()));
     set_server_key(sk);
     let args: Vec<String> = env::args().collect();
-    println!("DEBUG: deserializing client key...");
+    //println!("DEBUG: deserializing client key...");
     let mut byte_vec = fs::read("client_key.bin")?;
     let ck = deserialize_ck(&byte_vec.into_boxed_slice().deref())?;
 
@@ -42,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file = fs::read("encrypted_str.bin")?;
     let enc_str = deserialize_str(&file, string_size)?;
     */
-    println!("deserializing encrypted slice_string_i.bin...");
+    //println!("deserializing encrypted slice_string_i.bin...");
 
     let mut entries: Vec<_> = fs::read_dir(dir_path)?
         .filter_map(Result::ok) // 過濾掉失敗的結果
@@ -171,17 +172,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .into_par_iter()
                     .map(|i| &x[i - 1] * coef[i] % modulo)
                     .collect();
-                println!("done");
+                //println!("done");
 
                 for i in 2..len_coef {
                     sum = &sum + &v_terms[i-2] ;
                 }
 
-                //let start_mod = Instant::now();
+                let start_mod = Instant::now();
                 println!("final modulo...");
                 curr_state = &sum % modulo;
-                //let duration_mod = start_mod.elapsed();
-                //println!("the mod duration is {:?}", duration_mod);
+                let duration_mod = start_mod.elapsed();
+                println!("the mod duration is {:?}", duration_mod);
                 let debug_state:u8 = curr_state.decrypt(&ck);
                 println!("debug curr state {:?}", debug_state);
 
@@ -212,7 +213,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("sanitization...");
 
-        let measurements = 3;
+        let measurements = 30;
         let mut elapsed_times: Vec<Duration> = Vec::new();
 
         let mut sanitized_v = vec![];
@@ -224,21 +225,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for _ in 0..measurements {
 
             let start = Instant::now();
+
             for enc_x in &enc_string_arr_ascii[idx_str] {
-                &matching_res * enc_x;
+                let a = &matching_res * enc_x;
             }
 
             let elapsed = start.elapsed();
             elapsed_times.push(elapsed);
 
             println!("sanitization Elapsed time: {:?}", elapsed);
+
         }
 
         // 計算平均經過時間
-        let total_elapsed: Duration = elapsed_times.iter().sum();
-        let average_elapsed = total_elapsed / (measurements as u32);
+        //let total_elapsed: Duration = elapsed_times.iter().sum();
+        //let average_elapsed = total_elapsed / (measurements as u32);
 
         println!("Average sanitization elapsed time: {:?}", average_elapsed);
+
 
         println!("serialization for single string...");
         let mut serialized_enc_str = Vec::new();
@@ -254,7 +258,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         idx_str+=1;
 
 
-        println!("[debug] decrypt sanitized result");
+        println!("decrypt sanitized result");
         let s = decryptStr(sanitized_v, &ck);
         println!("the sanitized res is {:?}", s);
 
@@ -302,7 +306,7 @@ pub fn decryptStr(content: Vec<FheUint<FheUint16Id>>, ck: &ClientKey) -> String 
 
    // println!("Average decryption elapsed time: {:?}", average_elapsed);
 
-    println!("{:?}", v);
+    //println!("{:?}", v);
     String::from_utf8(v).unwrap()
 
 }
